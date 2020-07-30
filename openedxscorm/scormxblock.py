@@ -170,9 +170,13 @@ class ScormXBlock(XBlock):
             recursive_delete(self.extract_folder_base_path)
         with zipfile.ZipFile(package_file, "r") as scorm_zipfile:
             for zipinfo in scorm_zipfile.infolist():
+                if zipinfo.filename.endswith('/'):
+                    continue
+                inner_file = File(scorm_zipfile.open(zipinfo.filename))
+                inner_file.size = zipinfo.file_size
                 default_storage.save(
                     os.path.join(self.extract_folder_path, zipinfo.filename),
-                    scorm_zipfile.open(zipinfo.filename),
+                    inner_file,
                 )
 
         try:
@@ -369,7 +373,6 @@ class ScormXBlock(XBlock):
         xblock_settings = settings_service.get_settings_bucket(self)
         return xblock_settings.get("LOCATION", default_scorm_location)
 
-    
     @staticmethod
     def get_sha1(file_descriptor):
         """
